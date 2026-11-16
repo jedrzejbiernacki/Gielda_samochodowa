@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Profil sprzedawcy: {{ sprzedawca.nazwa_wyswietlana }} – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Wizytówka sprzedawcy i oceny -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center p-4">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                    <i class="bi bi-person"></i>
+                </div>
+                <h4 class="fw-bold mb-1">{{ sprzedawca.nazwa_wyswietlana }}</h4>
+                <span class="badge bg-secondary mb-3">{{ sprzedawca.get_rola_display }}</span>
+
+                <div class="mb-3">
+                    {% with srednia=sprzedawca.srednia_ocen %}
+                        {% if srednia %}
+                            <div class="star-rating fs-3 mb-1">
+                                <i class="bi bi-star-fill"></i> {{ srednia }} <span class="fs-6 text-muted">/ 5.0</span>
+                            </div>
+                            <div class="text-muted small">Na podstawie {{ sprzedawca.liczba_ocen }} transakcji</div>
+                        {% else %}
+                            <div class="text-muted small">Brak wystawionych opinii</div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <hr>
+
+                <ul class="list-unstyled text-start small mb-0">
+                    <li class="mb-2"><i class="bi bi-geo-alt text-primary me-2"></i><strong>Lokalizacja:</strong> {{ sprzedawca.miasto|default:'Nie podano' }}</li>
+                    {% if sprzedawca.telefon %}
+                    <li class="mb-2"><i class="bi bi-telephone text-primary me-2"></i><strong>Telefon:</strong> {{ sprzedawca.telefon }}</li>
+                    {% endif %}
+                    <li class="mb-2"><i class="bi bi-envelope text-primary me-2"></i><strong>E-mail:</strong> {{ sprzedawca.email }}</li>
+                    <li><i class="bi bi-calendar3 text-primary me-2"></i><strong>Konto od:</strong> {{ sprzedawca.data_rejestracji|date:"d.m.Y" }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Oceny i opinie kupujących -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-light py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-chat-square-quote me-2"></i>Opinie kupujących ({{ oceny.count }})</h6>
+            </div>
+            <div class="card-body p-3">
+                {% if oceny %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for o in oceny %}
+                        <div class="border-bottom pb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-semibold small">{{ o.oceniajacy.username }}</span>
+                                <span class="text-warning small">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= o.liczba_gwiazdek %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            <p class="small text-muted mb-1">{{ o.komentarz }}</p>
+                            <span class="text-secondary" style="font-size: 0.75rem;">{{ o.data_wystawienia|date:"d.m.Y" }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0 text-center py-3">Brak opinii o tym sprzedawcy.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Oferty sprzedawcy -->
+    <div class="col-lg-8">
+        <h4 class="fw-bold mb-3">Aktualne ogłoszenia tego sprzedawcy ({{ ogloszenia.count }})</h4>
+
+        {% if ogloszenia %}
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+                {% for ogl in ogloszenia %}
+                <div class="col">
+                    <div class="card h-100 car-card shadow-sm">
+                        <div class="card-img-wrapper">
+                            {% with zdj=ogl.glowne_zdjecie %}
+                                {% if zdj %}
+                                    <img src="{{ zdj.plik.url }}" alt="{{ ogl.tytul }}">
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center h-100 text-secondary">
+                                        <i class="bi bi-car-front fs-1"></i>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <div class="price-tag mb-1">{{ ogl.cena }} zł</div>
+                            <h6 class="card-title fw-bold mb-2">
+                                <a href="{% url 'ogloszenia:szczegoly' ogl.pk %}" class="text-decoration-none text-dark">
+                                    {{ ogl.tytul }}
+                                </a>
+                            </h6>
+                            <div class="text-secondary small mb-3">
+                                {{ ogl.rok_produkcji }} r. &bull; {{ ogl.przebieg_km }} km &bull; {{ ogl.get_paliwo_display }}
+                            </div>
+                            <a href="{% url 'ogloszenia:szczegoly' ogl.pk %}" class="btn btn-outline-primary btn-sm mt-auto w-100">
+                                Zobacz szczegóły
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-light border py-4 text-center">
+                Ten sprzedawca nie ma obecnie aktywnych ogłoszeń w serwisie.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

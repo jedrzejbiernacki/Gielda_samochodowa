@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Moje zamówienia – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-bag-check text-primary me-2"></i>Moje zamówienia i rezerwacje</h3>
+        <p class="text-muted mb-0">Historia i aktualny status Twoich transakcji w serwisie.</p>
+    </div>
+</div>
+
+{% if zamowienia %}
+<div class="d-flex flex-column gap-3">
+    {% for zam in zamowienia %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <div class="row align-items-center g-3">
+                <div class="col-md-2">
+                    <div style="height: 100px; background: #0f172a;" class="rounded overflow-hidden">
+                        {% with zdj=zam.ogloszenie.glowne_zdjecie %}
+                            {% if zdj %}
+                                <img src="{{ zdj.plik.url }}" class="w-100 h-100 object-fit-cover" alt="Auto">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center h-100 text-secondary">
+                                    <i class="bi bi-car-front fs-2"></i>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-light text-dark border">Zamówienie #{{ zam.id }}</span>
+                        <span class="text-muted small">złożono: {{ zam.data_zlozenia|date:"d.m.Y H:i" }}</span>
+                    </div>
+
+                    <h5 class="fw-bold mb-1">
+                        <a href="{% url 'ogloszenia:szczegoly' zam.ogloszenie.id %}" class="text-dark text-decoration-none">
+                            {{ zam.ogloszenie.tytul }}
+                        </a>
+                    </h5>
+
+                    <div class="text-muted small mb-2">
+                        Sprzedawca:
+                        <a href="{% url 'konta:profil_sprzedawcy' zam.ogloszenie.sprzedawca.id %}" class="text-decoration-none">
+                            {{ zam.ogloszenie.sprzedawca.nazwa_wyswietlana }}
+                        </a>
+                        {% if zam.ogloszenie.sprzedawca.telefon %}
+                            &bull; Tel: <strong>{{ zam.ogloszenie.sprzedawca.telefon }}</strong>
+                        {% endif %}
+                    </div>
+
+                    {% if zam.uwagi_kupujacego %}
+                        <div class="small bg-light p-2 rounded text-secondary mb-1">
+                            <strong>Twoje uwagi:</strong> {{ zam.uwagi_kupujacego }}
+                        </div>
+                    {% endif %}
+
+                    {% if zam.uzasadnienie_odrzucenia %}
+                        <div class="small bg-danger bg-opacity-10 text-danger p-2 rounded mb-1">
+                            <strong>Powód odrzucenia przez sprzedawcę:</strong> {{ zam.uzasadnienie_odrzucenia }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4 text-md-end">
+                    <div class="fs-4 fw-bold text-primary mb-2">{{ zam.cena }} zł</div>
+
+                    <div class="mb-3">
+                        {% if zam.status == 'ZLOZONE' %}
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-2">Złożone (oczekuje na sprzedawcę)</span>
+                        {% elif zam.status == 'ZAAKCEPTOWANE' %}
+                            <span class="badge bg-primary fs-6 px-3 py-2">Zaakceptowane (w trakcie odbioru)</span>
+                        {% elif zam.status == 'ZAKONCZONE' %}
+                            <span class="badge bg-success fs-6 px-3 py-2">Zakończone (odebrano pojazd)</span>
+                        {% elif zam.status == 'ODRZUCONE' %}
+                            <span class="badge bg-danger fs-6 px-3 py-2">Odrzucone</span>
+                        {% elif zam.status == 'ANULOWANE' %}
+                            <span class="badge bg-secondary fs-6 px-3 py-2">Anulowane</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                        {% if zam.status == 'ZLOZONE' %}
+                            <form action="{% url 'zamowienia:anuluj' zam.id %}" method="post" onsubmit="return confirm('Czy na pewno chcesz anulować to zamówienie?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-x-circle me-1"></i> Anuluj rezerwację
+                                </button>
+                            </form>
+                        {% elif zam.status == 'ZAAKCEPTOWANE' %}
+                            <form action="{% url 'zamowienia:potwierdz' zam.id %}" method="post" onsubmit="return confirm('Potwierdzasz odbiór samochodu i sfinalizowanie transakcji?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="bi bi-check-circle me-1"></i> Potwierdź odbiór auta
+                                </button>
+                            </form>
+                        {% elif zam.status == 'ZAKONCZONE' %}
+                            {% if zam.czy_mozna_ocenic %}
+                                <a href="{% url 'zamowienia:ocen' zam.id %}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-star me-1"></i> Wystaw ocenę
+                                </a>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">
+                                    Ocena: {{ zam.ocena.liczba_gwiazdek }} ★
+                                </span>
+                            {% endif %}
+                        {% endif %}
+
+                        <a href="{% url 'wiadomosci:watek' zam.ogloszenie.id zam.kupujacy.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-chat-dots me-1"></i> Wiadomość
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-light border text-center py-5 shadow-sm">
+    <i class="bi bi-bag-x fs-1 text-muted d-block mb-2"></i>
+    <h5>Nie złożyłeś jeszcze żadnych zamówień</h5>
+    <p class="text-muted mb-3">Przeglądaj ogłoszenia i złóż rezerwację na swoje wymarzone auto.</p>
+    <a href="{% url 'ogloszenia:lista' %}" class="btn btn-primary">Przeglądaj ogłoszenia</a>
+</div>
+{% endif %}
+{% endblock %}

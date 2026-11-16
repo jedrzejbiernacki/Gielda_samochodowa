@@ -1,0 +1,57 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_polish_ci
+      --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: gielda
+      MYSQL_USER: gielda_user
+      MYSQL_PASSWORD: gielda_password
+    volumes:
+      - dane_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "gielda_user", "-pgielda_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      DB_ENGINE: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: gielda
+      DB_USER: gielda_user
+      DB_PASSWORD: gielda_password
+      SECRET_KEY: django-insecure-gielda-docker-production-key-2026
+      DEBUG: "False"
+      ALLOWED_HOSTS: "*"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - pliki_statyczne:/app/staticfiles
+      - zdjecia:/app/media
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - pliki_statyczne:/static:ro
+      - zdjecia:/media:ro
+
+volumes:
+  dane_mysql:
+  pliki_statyczne:
+  zdjecia:

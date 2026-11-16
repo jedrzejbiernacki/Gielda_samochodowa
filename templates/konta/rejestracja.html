@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Rejestracja konta – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-person-plus me-2"></i>Rejestracja w serwisie</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Wybierz typ konta (rola) *</label>
+                        <select name="rola" id="id_rola" class="form-select">
+                            {% for val, label in form.fields.rola.choices %}
+                                <option value="{{ val }}" {% if form.rola.value == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.rola.errors %}<div class="text-danger small">{{ form.rola.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3" id="sekcja-firma" style="{% if form.rola.value != 'KOMIS' %}display: none;{% endif %}">
+                        <label class="form-label fw-semibold">Nazwa komisu / firmy *</label>
+                        <input type="text" name="nazwa_firmy" class="form-control" value="{{ form.nazwa_firmy.value|default:'' }}" placeholder="Np. Auto-Centrum sp. z o.o.">
+                        {% if form.nazwa_firmy.errors %}<div class="text-danger small">{{ form.nazwa_firmy.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Imię *</label>
+                            <input type="text" name="first_name" class="form-control" value="{{ form.first_name.value|default:'' }}" required>
+                            {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Nazwisko *</label>
+                            <input type="text" name="last_name" class="form-control" value="{{ form.last_name.value|default:'' }}" required>
+                            {% if form.last_name.errors %}<div class="text-danger small">{{ form.last_name.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nazwa użytkownika (login) *</label>
+                        <input type="text" name="username" class="form-control" value="{{ form.username.value|default:'' }}" required>
+                        {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Adres e-mail *</label>
+                        <input type="email" name="email" class="form-control" value="{{ form.email.value|default:'' }}" required>
+                        {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Telefon kontaktowy</label>
+                            <input type="text" name="telefon" class="form-control" value="{{ form.telefon.value|default:'' }}" placeholder="+48 123 456 789">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Miejscowość</label>
+                            <input type="text" name="miasto" class="form-control" value="{{ form.miasto.value|default:'' }}" placeholder="Warszawa">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Hasło *</label>
+                        <input type="password" name="password1" class="form-control" required>
+                        {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Potwierdź hasło *</label>
+                        <input type="password" name="password2" class="form-control" required>
+                        {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        Załóż konto
+                    </button>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                Masz już konto? <a href="{% url 'konta:logowanie' %}" class="fw-semibold">Zaloguj się tutaj</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('id_rola').addEventListener('change', function() {
+        const sekcjaFirma = document.getElementById('sekcja-firma');
+        if (this.value === 'KOMIS') {
+            sekcjaFirma.style.display = 'block';
+        } else {
+            sekcjaFirma.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

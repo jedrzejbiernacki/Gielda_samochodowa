@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ ogloszenie.tytul }} – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Kolumna główna: galeria, opis i dane techniczne -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge bg-secondary mb-2">{{ ogloszenie.model_pojazdu.marka.nazwa }} &bull; {{ ogloszenie.model_pojazdu.nazwa }}</span>
+                        <h2 class="fw-bold mb-1">{{ ogloszenie.tytul }}</h2>
+                        <div class="text-muted small">
+                            <i class="bi bi-geo-alt me-1"></i> {{ ogloszenie.lokalizacja }} &bull;
+                            <i class="bi bi-clock me-1"></i> Dodano: {{ ogloszenie.data_dodania|date:"d.m.Y H:i" }} &bull;
+                            <i class="bi bi-eye me-1"></i> Wyświetleń: {{ ogloszenie.liczba_wyswietlen }}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fs-2 fw-bold text-primary">{{ ogloszenie.cena }} zł</div>
+                        {% if ogloszenie.status == 'AKTYWNE' %}
+                            <span class="badge bg-success">Dostępne</span>
+                        {% elif ogloszenie.status == 'ZAREZERWOWANE' %}
+                            <span class="badge bg-warning text-dark">Zarezerwowane</span>
+                        {% elif ogloszenie.status == 'SPRZEDANE' %}
+                            <span class="badge bg-danger">Sprzedane</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ ogloszenie.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Galeria zdjęć (PU-05, PU-11) -->
+                {% if zdjecia %}
+                    <div class="gallery-main mb-3">
+                        <img id="glowne-zdjecie-podglad" src="{{ zdjecia.0.plik.url }}" alt="{{ ogloszenie.tytul }}">
+                    </div>
+                    {% if zdjecia|length > 1 %}
+                    <div class="d-flex gap-2 overflow-auto pb-2 mb-4">
+                        {% for zdj in zdjecia %}
+                        <img src="{{ zdj.plik.url }}" data-full="{{ zdj.plik.url }}" class="gallery-thumb {% if forloop.first %}active{% endif %}" alt="Miniatura">
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="gallery-main mb-4 text-secondary">
+                        <i class="bi bi-camera fs-1"></i>
+                    </div>
+                {% endif %}
+
+                <!-- Parametry pojazdu -->
+                <h5 class="fw-bold border-bottom pb-2 mb-3">Szczegółowe dane pojazdu</h5>
+                <div class="row row-cols-2 row-cols-md-3 g-3 mb-4">
+                    <div class="col">
+                        <div class="text-muted small">Rok produkcji</div>
+                        <div class="fw-semibold">{{ ogloszenie.rok_produkcji }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted small">Przebieg</div>
+                        <div class="fw-semibold">{{ ogloszenie.przebieg_km }} km</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted small">Rodzaj paliwa</div>
+                        <div class="fw-semibold">{{ ogloszenie.get_paliwo_display }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted small">Skrzynia biegów</div>
+                        <div class="fw-semibold">{{ ogloszenie.get_skrzynia_display }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted small">Typ nadwozia</div>
+                        <div class="fw-semibold">{{ ogloszenie.get_nadwozie_display }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted small">Moc silnika</div>
+                        <div class="fw-semibold">{% if ogloszenie.moc_km %}{{ ogloszenie.moc_km }} KM{% else %}-{% endif %}</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted small">Pojemność skokowa</div>
+                        <div class="fw-semibold">{% if ogloszenie.pojemnosc_cm3 %}{{ ogloszenie.pojemnosc_cm3 }} cm³{% else %}-{% endif %}</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted small">Kolor</div>
+                        <div class="fw-semibold">{{ ogloszenie.kolor }}</div>
+                    </div>
+                    <div class="col">
+                        <div class="text-muted small">Numer VIN</div>
+                        <div class="fw-semibold">{% if ogloszenie.vin %}{{ ogloszenie.vin }}{% else %}Nie podano{% endif %}</div>
+                    </div>
+                </div>
+
+                <!-- Opis ogłoszenia -->
+                <h5 class="fw-bold border-bottom pb-2 mb-3">Opis pojazdu</h5>
+                <div class="bg-light p-3 rounded" style="white-space: pre-line;">{{ ogloszenie.opis }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel boczny: Sprzedawca i akcje -->
+    <div class="col-lg-4">
+        <!-- Akcje zakupu i kontaktu -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Zainteresowany ofertą?</h5>
+
+                {% if ogloszenie.status == 'AKTYWNE' %}
+                    {% if user.is_authenticated and user == ogloszenie.sprzedawca %}
+                        <div class="alert alert-secondary small mb-3">To jest Twoje ogłoszenie.</div>
+                        <a href="{% url 'ogloszenia:edytuj' ogloszenie.pk %}" class="btn btn-warning w-100 mb-2">
+                            <i class="bi bi-pencil-square me-1"></i> Edytuj to ogłoszenie
+                        </a>
+                    {% else %}
+                        <a href="{% url 'zamowienia:zloz' ogloszenie.pk %}" class="btn btn-success btn-lg w-100 mb-2">
+                            <i class="bi bi-bag-check me-1"></i> Kup / Zarezerwuj pojazd
+                        </a>
+
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'wiadomosci:nowa' ogloszenie.pk %}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="bi bi-chat-dots me-1"></i> Wyślij wiadomość
+                            </a>
+                        {% else %}
+                            <a href="{% url 'konta:logowanie' %}?next={{ request.path }}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="bi bi-chat-dots me-1"></i> Zaloguj się, aby napisać
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-warning mb-3">
+                        To ogłoszenie ma status <strong>{{ ogloszenie.get_status_display }}</strong> i nie można złożyć na nie nowej rezerwacji.
+                    </div>
+                {% endif %}
+
+                <div class="d-flex gap-2 mt-3">
+                    {% if user.is_authenticated %}
+                    <form action="{% url 'ogloszenia:ulubione_przelacz' ogloszenie.pk %}" method="post" class="flex-grow-1">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                            <i class="bi {% if czy_ulubione %}bi-heart-fill{% else %}bi-heart{% endif %} me-1"></i>
+                            {% if czy_ulubione %}Usuń z ulubionych{% else %}Do ulubionych{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <form action="{% url 'ogloszenia:porownanie_dodaj' ogloszenie.pk %}" method="post" class="flex-grow-1">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary w-100 btn-sm">
+                            <i class="bi bi-arrow-left-right me-1"></i>
+                            {% if w_porownywarce %}W porównaniu{% else %}Porównaj{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wizytówka sprzedawcy -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-uppercase text-muted fw-bold small mb-3">Informacje o sprzedawcy</h6>
+
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 54px; height: 54px; font-size: 1.5rem;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">
+                            <a href="{% url 'konta:profil_sprzedawcy' ogloszenie.sprzedawca.id %}" class="text-decoration-none text-dark">
+                                {{ ogloszenie.sprzedawca.nazwa_wyswietlana }}
+                            </a>
+                        </h5>
+                        <span class="badge bg-light text-dark border">{{ ogloszenie.sprzedawca.get_rola_display }}</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    {% with srednia=ogloszenie.sprzedawca.srednia_ocen %}
+                        {% if srednia %}
+                            <div class="star-rating fs-5">
+                                <i class="bi bi-star-fill"></i>
+                                <span class="fw-bold text-dark">{{ srednia }} / 5.0</span>
+                                <span class="text-muted small">({{ ogloszenie.sprzedawca.liczba_ocen }} ocen)</span>
+                            </div>
+                        {% else %}
+                            <span class="text-muted small">Brak wystawionych ocen</span>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <ul class="list-unstyled text-secondary small mb-3">
+                    <li class="mb-2"><i class="bi bi-geo-alt me-2 text-primary"></i> {{ ogloszenie.sprzedawca.miasto|default:ogloszenie.lokalizacja }}</li>
+                    {% if ogloszenie.sprzedawca.telefon %}
+                    <li class="mb-2"><i class="bi bi-telephone me-2 text-primary"></i> <span class="fw-semibold text-dark">{{ ogloszenie.sprzedawca.telefon }}</span></li>
+                    {% endif %}
+                    <li><i class="bi bi-calendar3 me-2 text-primary"></i> Na giełdzie od {{ ogloszenie.sprzedawca.data_rejestracji|date:"m.Y" }}</li>
+                </ul>
+
+                <a href="{% url 'konta:profil_sprzedawcy' ogloszenie.sprzedawca.id %}" class="btn btn-outline-secondary btn-sm w-100">
+                    Zobacz wszystkie oferty sprzedawcy &raquo;
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

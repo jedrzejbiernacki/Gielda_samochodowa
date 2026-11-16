@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Moje ogłoszenia – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Moje ogłoszenia</h3>
+        <p class="text-muted mb-0">Zarządzaj swoimi wystawionymi ofertami, edytuj parametry i kontroluj statusy.</p>
+    </div>
+    <a href="{% url 'ogloszenia:dodaj' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Dodaj nowe ogłoszenie
+    </a>
+</div>
+
+{% if ogloszenia %}
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Zdjęcie i tytuł</th>
+                    <th scope="col">Cena</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Ważne do</th>
+                    <th scope="col">Wyświetlenia</th>
+                    <th scope="col" class="text-end">Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ogl in ogloszenia %}
+                <tr>
+                    <td style="min-width: 250px;">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width: 70px; height: 50px; background-color: #0f172a;" class="rounded overflow-hidden flex-shrink-0">
+                                {% with zdj=ogl.glowne_zdjecie %}
+                                    {% if zdj %}
+                                        <img src="{{ zdj.plik.url }}" class="w-100 h-100 object-fit-cover" alt="Auto">
+                                    {% else %}
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-secondary small">
+                                            <i class="bi bi-car-front"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div>
+                                <a href="{% url 'ogloszenia:szczegoly' ogl.pk %}" class="fw-bold text-dark text-decoration-none">
+                                    {{ ogl.tytul }}
+                                </a>
+                                <div class="text-muted small">{{ ogl.model_pojazdu }} &bull; {{ ogl.rok_produkcji }} r.</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="fw-bold text-primary">{{ ogl.cena }} zł</td>
+                    <td>
+                        {% if ogl.status == 'AKTYWNE' %}
+                            <span class="badge bg-success">Aktywne</span>
+                        {% elif ogl.status == 'SZKIC' %}
+                            <span class="badge bg-secondary">Szkic</span>
+                        {% elif ogl.status == 'ZAREZERWOWANE' %}
+                            <span class="badge bg-warning text-dark">Zarezerwowane</span>
+                        {% elif ogl.status == 'SPRZEDANE' %}
+                            <span class="badge bg-danger">Sprzedane</span>
+                        {% elif ogl.status == 'WYGASLE' %}
+                            <span class="badge bg-dark">Wygasłe</span>
+                        {% elif ogl.status == 'ZABLOKOWANE' %}
+                            <span class="badge bg-danger">Zablokowane</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">{{ ogl.data_wygasniecia|date:"d.m.Y" }}</td>
+                    <td class="small">{{ ogl.liczba_wyswietlen }}</td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'ogloszenia:edytuj' ogl.pk %}" class="btn btn-outline-secondary" title="Edytuj">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+
+                            {% if ogl.status == 'SZKIC' %}
+                            <form action="{% url 'ogloszenia:zmien_status' ogl.pk %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="akcja" value="opublikuj">
+                                <button type="submit" class="btn btn-outline-success" title="Opublikuj szkic">
+                                    <i class="bi bi-cloud-upload"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if ogl.status == 'AKTYWNE' or ogl.status == 'ZAREZERWOWANE' %}
+                            <form action="{% url 'ogloszenia:zmien_status' ogl.pk %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="akcja" value="sprzedane">
+                                <button type="submit" class="btn btn-outline-primary" title="Oznacz jako sprzedane" onclick="return confirm('Oznaczyć ogłoszenie jako sprzedane?');">
+                                    <i class="bi bi-check2-all"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            <form action="{% url 'ogloszenia:przedluz' ogl.pk %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-info" title="Przedłuż o 30 dni">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                            </form>
+
+                            <form action="{% url 'ogloszenia:usun' ogl.pk %}" method="post" class="d-inline" onsubmit="return confirm('Czy na pewno chcesz usunąć to ogłoszenie?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger" title="Usuń ogłoszenie">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-light border text-center py-5 shadow-sm">
+    <i class="bi bi-car-front fs-1 text-muted d-block mb-2"></i>
+    <h5>Nie dodałeś jeszcze żadnych ogłoszeń</h5>
+    <p class="text-muted mb-3">Wystaw swój pierwszy samochód na sprzedaż już teraz.</p>
+    <a href="{% url 'ogloszenia:dodaj' %}" class="btn btn-primary">Wystaw samochód</a>
+</div>
+{% endif %}
+{% endblock %}

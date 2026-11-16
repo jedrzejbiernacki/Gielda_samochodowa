@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Wystaw ocenę sprzedawcy – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark py-3">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-star-fill me-2"></i>Wystaw opinię i ocenę sprzedawcy</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body">
+                        <span class="badge bg-secondary mb-1">Zakończona transakcja</span>
+                        <h5 class="fw-bold mb-1">{{ zamowienie.ogloszenie.tytul }}</h5>
+                        <div class="text-muted small">
+                            Sprzedawca: <strong>{{ zamowienie.ogloszenie.sprzedawca.nazwa_wyswietlana }}</strong> &bull; Kwota: <strong>{{ zamowienie.cena }} zł</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Twoja ocena (liczba gwiazdek) *</label>
+                        <div class="d-flex flex-column gap-2">
+                            {% for radio in form.liczba_gwiazdek %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label fw-semibold" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.liczba_gwiazdek.errors %}
+                            <div class="text-danger small mt-1">{{ form.liczba_gwiazdek.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Treść opinii i komentarz *</label>
+                        {{ form.komentarz }}
+                        {% if form.komentarz.errors %}
+                            <div class="text-danger small mt-1">{{ form.komentarz.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                        <a href="{% url 'zamowienia:moje' %}" class="btn btn-outline-secondary">Wróć</a>
+                        <button type="submit" class="btn btn-warning px-4 fw-bold">
+                            <i class="bi bi-check-circle me-1"></i> Opublikuj opinię
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

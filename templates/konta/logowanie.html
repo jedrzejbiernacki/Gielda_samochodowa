@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Logowanie – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white py-3 text-center">
+                <i class="bi bi-box-arrow-in-right fs-2 text-primary d-block mb-1"></i>
+                <h4 class="mb-0 fw-bold">Logowanie do serwisu</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Login (nazwa użytkownika)</label>
+                        <input type="text" name="username" class="form-control" autofocus required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Hasło</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        Zaloguj się
+                    </button>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                Nie masz jeszcze konta? <a href="{% url 'konta:rejestracja' %}" class="fw-semibold">Zarejestruj się bezpłatnie</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

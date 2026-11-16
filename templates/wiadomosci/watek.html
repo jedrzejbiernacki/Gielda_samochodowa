@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Rozmowa: {{ ogloszenie.tytul }} – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{% url 'wiadomosci:skrzynka' %}" class="btn btn-outline-secondary btn-sm" title="Powrót do skrzynki">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h6 class="fw-bold mb-0">Rozmowa z: {{ odbiorca.nazwa_wyswietlana }}</h6>
+                        <span class="text-muted small">
+                            <i class="bi bi-car-front me-1"></i>
+                            <a href="{% url 'ogloszenia:szczegoly' ogloszenie.id %}" class="text-decoration-none">
+                                {{ ogloszenie.tytul }} ({{ ogloszenie.cena }} zł)
+                            </a>
+                        </span>
+                    </div>
+                </div>
+                <a href="{% url 'ogloszenia:szczegoly' ogloszenie.id %}" class="btn btn-outline-primary btn-sm">
+                    Zobacz ogłoszenie
+                </a>
+            </div>
+        </div>
+
+        <!-- Okno wiadomości -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4" style="min-height: 350px; max-height: 550px; overflow-y: auto; background-color: #f8fafc;">
+                {% if wiadomosci_list %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for msg in wiadomosci_list %}
+                            {% if msg.nadawca == user %}
+                                <!-- Wysłana przeze mnie -->
+                                <div class="align-self-end message-bubble-sent shadow-sm">
+                                    <div class="mb-1" style="white-space: pre-wrap;">{{ msg.tresc }}</div>
+                                    <div class="text-end small text-white-50" style="font-size: 0.75rem;">
+                                        {{ msg.data_wyslania|date:"d.m.Y H:i" }}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <!-- Odebrana -->
+                                <div class="align-self-start message-bubble-received shadow-sm">
+                                    <div class="fw-bold small text-primary mb-1">{{ msg.nadawca.nazwa_wyswietlana }}</div>
+                                    <div class="mb-1" style="white-space: pre-wrap;">{{ msg.tresc }}</div>
+                                    <div class="text-end small text-muted" style="font-size: 0.75rem;">
+                                        {{ msg.data_wyslania|date:"d.m.Y H:i" }}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-chat-left-dots fs-1 d-block mb-2"></i>
+                        Rozpocznij konwersację dotyczącą tego ogłoszenia.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Formularz odpowiedzi -->
+            <div class="card-footer bg-white p-3">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        {{ form.tresc }}
+                        {% if form.tresc.errors %}<div class="text-danger small mt-1">{{ form.tresc.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Maksymalnie 2000 znaków</span>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-send me-1"></i> Wyślij wiadomość
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

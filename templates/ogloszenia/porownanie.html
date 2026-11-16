@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Porównanie samochodów – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-arrow-left-right text-primary me-2"></i>Porównywarka pojazdów</h3>
+        <p class="text-muted mb-0">Zestawienie do 3 samochodów obok siebie w tabeli parametrów.</p>
+    </div>
+    {% if samochody %}
+    <form action="{% url 'ogloszenia:porownanie_wyczysc' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-x-circle me-1"></i> Wyczyść listę
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+{% if samochody %}
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle mb-0 text-center">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" style="width: 20%;" class="text-start">Parametr</th>
+                    {% for auto in samochody %}
+                    <th scope="col" style="width: {{ 80|floatformat:0 }}%;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-secondary">Pojazd #{{ forloop.counter }}</span>
+                            <form action="{% url 'ogloszenia:porownanie_usun' auto.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Usuń z porównania">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                        </div>
+                        <div style="height: 140px; background: #0f172a;" class="rounded overflow-hidden mb-2">
+                            {% with zdj=auto.glowne_zdjecie %}
+                                {% if zdj %}
+                                    <img src="{{ zdj.plik.url }}" class="w-100 h-100 object-fit-cover" alt="{{ auto.tytul }}">
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center h-100 text-secondary">
+                                        <i class="bi bi-car-front fs-2"></i>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        <h6 class="fw-bold mb-1">
+                            <a href="{% url 'ogloszenia:szczegoly' auto.id %}" class="text-dark text-decoration-none">
+                                {{ auto.tytul }}
+                            </a>
+                        </h6>
+                        <div class="fs-5 fw-bold text-primary">{{ auto.cena }} zł</div>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-start fw-semibold">Marka i model</td>
+                    {% for auto in samochody %}<td>{{ auto.model_pojazdu }}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Rok produkcji</td>
+                    {% for auto in samochody %}<td class="fw-bold">{{ auto.rok_produkcji }}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Przebieg</td>
+                    {% for auto in samochody %}<td>{{ auto.przebieg_km }} km</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Rodzaj paliwa</td>
+                    {% for auto in samochody %}<td>{{ auto.get_paliwo_display }}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Skrzynia biegów</td>
+                    {% for auto in samochody %}<td>{{ auto.get_skrzynia_display }}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Typ nadwozia</td>
+                    {% for auto in samochody %}<td>{{ auto.get_nadwozie_display }}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Moc silnika</td>
+                    {% for auto in samochody %}<td>{% if auto.moc_km %}{{ auto.moc_km }} KM{% else %}-{% endif %}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Pojemność silnika</td>
+                    {% for auto in samochody %}<td>{% if auto.pojemnosc_cm3 %}{{ auto.pojemnosc_cm3 }} cm³{% else %}-{% endif %}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Kolor lakieru</td>
+                    {% for auto in samochody %}<td>{{ auto.kolor }}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Miejscowość</td>
+                    {% for auto in samochody %}<td>{{ auto.lokalizacja }}</td>{% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Sprzedawca</td>
+                    {% for auto in samochody %}
+                    <td>
+                        <a href="{% url 'konta:profil_sprzedawcy' auto.sprzedawca.id %}" class="text-decoration-none">
+                            {{ auto.sprzedawca.nazwa_wyswietlana }}
+                        </a>
+                        {% with srednia=auto.sprzedawca.srednia_ocen %}
+                            {% if srednia %}
+                                <div class="small text-warning">★ {{ srednia }}</div>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td class="text-start fw-semibold">Działanie</td>
+                    {% for auto in samochody %}
+                    <td>
+                        <a href="{% url 'ogloszenia:szczegoly' auto.id %}" class="btn btn-outline-primary btn-sm w-100 mb-1">
+                            Szczegóły
+                        </a>
+                        {% if auto.status == 'AKTYWNE' %}
+                        <a href="{% url 'zamowienia:zloz' auto.id %}" class="btn btn-success btn-sm w-100">
+                            Rezerwuj
+                        </a>
+                        {% else %}
+                        <span class="badge bg-secondary w-100">{{ auto.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-light border text-center py-5 shadow-sm">
+    <i class="bi bi-arrow-left-right fs-1 text-muted d-block mb-2"></i>
+    <h5>Nie wybrano żadnych samochodów do porównania</h5>
+    <p class="text-muted mb-3">Kliknij przycisk „Porównaj” przy dowolnym ogłoszeniu (maksymalnie 3 auta), aby zestawić ich parametry obok siebie.</p>
+    <a href="{% url 'ogloszenia:lista' %}" class="btn btn-primary">Przejdź do listy ofert</a>
+</div>
+{% endif %}
+{% endblock %}

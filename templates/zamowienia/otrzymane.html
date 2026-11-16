@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Otrzymane zamówienia – Giełda Samochodowa{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-inbox text-primary me-2"></i>Otrzymane rezerwacje i zamówienia</h3>
+        <p class="text-muted mb-0">Decyduj o akceptacji lub odrzuceniu rezerwacji na Twoje samochody.</p>
+    </div>
+</div>
+
+{% if zamowienia %}
+<div class="d-flex flex-column gap-3">
+    {% for zam in zamowienia %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <div class="row align-items-center g-3">
+                <div class="col-md-7">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-light text-dark border">Zamówienie #{{ zam.id }}</span>
+                        <span class="text-muted small">złożono: {{ zam.data_zlozenia|date:"d.m.Y H:i" }}</span>
+                    </div>
+
+                    <h5 class="fw-bold mb-1">
+                        <a href="{% url 'ogloszenia:szczegoly' zam.ogloszenie.id %}" class="text-dark text-decoration-none">
+                            {{ zam.ogloszenie.tytul }}
+                        </a>
+                    </h5>
+
+                    <div class="text-muted small mb-2">
+                        Kupujący: <strong>{{ zam.kupujacy.nazwa_wyswietlana }}</strong> ({{ zam.kupujacy.email }})
+                        {% if zam.kupujacy.telefon %} &bull; Tel: <strong>{{ zam.kupujacy.telefon }}</strong>{% endif %}
+                    </div>
+
+                    {% if zam.uwagi_kupujacego %}
+                        <div class="small bg-light p-2 rounded text-secondary mb-2">
+                            <strong>Uwagi kupującego:</strong> {{ zam.uwagi_kupujacego }}
+                        </div>
+                    {% endif %}
+
+                    {% if zam.uzasadnienie_odrzucenia %}
+                        <div class="small bg-danger bg-opacity-10 text-danger p-2 rounded">
+                            <strong>Powód odrzucenia:</strong> {{ zam.uzasadnienie_odrzucenia }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-5 text-md-end">
+                    <div class="fs-4 fw-bold text-primary mb-1">{{ zam.cena }} zł</div>
+
+                    <div class="mb-3">
+                        {% if zam.status == 'ZLOZONE' %}
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-2">Nowa rezerwacja (do decyzji)</span>
+                        {% elif zam.status == 'ZAAKCEPTOWANE' %}
+                            <span class="badge bg-primary fs-6 px-3 py-2">Zaakceptowane</span>
+                        {% elif zam.status == 'ZAKONCZONE' %}
+                            <span class="badge bg-success fs-6 px-3 py-2">Zakończone i odebrane</span>
+                        {% elif zam.status == 'ODRZUCONE' %}
+                            <span class="badge bg-danger fs-6 px-3 py-2">Odrzucone</span>
+                        {% elif zam.status == 'ANULOWANE' %}
+                            <span class="badge bg-secondary fs-6 px-3 py-2">Anulowane przez kupującego</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                        {% if zam.status == 'ZLOZONE' %}
+                            <form action="{% url 'zamowienia:akceptuj' zam.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm px-3" onclick="return confirm('Zaakceptować zamówienie? Samochód otrzyma status Sprzedane.');">
+                                    <i class="bi bi-check-lg me-1"></i> Akceptuj
+                                </button>
+                            </form>
+
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalOdrzuc{{ zam.id }}">
+                                <i class="bi bi-x-lg me-1"></i> Odrzuć
+                            </button>
+
+                            <!-- Modal odrzucenia z powodem -->
+                            <div class="modal fade" id="modalOdrzuc{{ zam.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog text-start">
+                                    <div class="modal-content">
+                                        <form action="{% url 'zamowienia:odrzuc' zam.id %}" method="post">
+                                            {% csrf_token %}
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Odrzucenie zamówienia #{{ zam.id }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <label class="form-label fw-semibold">Podaj powód odrzucenia (opcjonalnie):</label>
+                                                <textarea name="uzasadnienie" class="form-control" rows="3" placeholder="Np. pojazd został zarezerwowany telefonicznie..."></textarea>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                                                <button type="submit" class="btn btn-danger">Odrzuć zamówienie</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <a href="{% url 'wiadomosci:watek' zam.ogloszenie.id zam.kupujacy.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-chat-dots me-1"></i> Czat z kupującym
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-light border text-center py-5 shadow-sm">
+    <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+    <h5>Brak otrzymanych zamówień</h5>
+    <p class="text-muted mb-0">Nie otrzymałeś jeszcze rezerwacji od kupujących.</p>
+</div>
+{% endif %}
+{% endblock %}
